@@ -16,7 +16,13 @@ $$
 $$
 where \( l \) is the size of the square side in degrees.
 
+## Elevation
 
+We can use the elevation data where the lowest point in meters is the 0 value and the highest point is 1. So the elevation of "sea level" would not necessarily be 0 but rather a value in between 0 and 1.
+
+## Terrain
+
+Depending on the data source we use, we can apply an analysis of a print of the map to determine the type of terrain. We can use a set of different types of terrain depending on the kind of information we can get.
 
 ## Links
 

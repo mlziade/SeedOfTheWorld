@@ -1,4 +1,33 @@
 import requests
+from dataclasses import dataclass
+
+
+@dataclass
+class ElevationPoint:
+    latitude: float
+    longitude: float
+    elevation: float
+
+
+@dataclass
+class ElevationResult:
+    results: list[ElevationPoint]
+    status: str
+
+
+@dataclass
+class PathElevationResult:
+    results: list[ElevationPoint]
+    status: str
+
+
+@dataclass
+class AreaElevationResult:
+    results: list[list[float]]
+    rows: int
+    columns: int
+    resolution: float
+    status: str
 
 
 class TessaDEMAPI:
@@ -21,7 +50,7 @@ class TessaDEMAPI:
         locations: list[tuple[float, float]], 
         unit: str = "meters", 
         format: str = "json"
-    ) -> dict:
+    ) -> ElevationResult:
         """
         Get elevation data for specific points.
         
@@ -52,14 +81,28 @@ class TessaDEMAPI:
         
         response = requests.get(self.base_url, params=params)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        
+        elevation_points = [
+            ElevationPoint(
+                latitude=result['lat'],
+                longitude=result['lng'],
+                elevation=result['elevation']
+            )
+            for result in data['results']
+        ]
+        
+        return ElevationResult(
+            results=elevation_points,
+            status=data['status']
+        )
     
     def get_elevation_path(
         self, 
         locations: list[tuple[float, float]], 
         unit: str = "meters", 
         format: str = "json"
-    ) -> dict:
+    ) -> PathElevationResult:
         """
         Get elevation data along a path.
         
@@ -87,14 +130,28 @@ class TessaDEMAPI:
         
         response = requests.get(self.base_url, params=params)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        
+        elevation_points = [
+            ElevationPoint(
+                latitude=result['lat'],
+                longitude=result['lng'],
+                elevation=result['elevation']
+            )
+            for result in data['results']
+        ]
+        
+        return PathElevationResult(
+            results=elevation_points,
+            status=data['status']
+        )
     
     def get_elevation_area(
         self, 
         locations: list[tuple[float, float]], 
         unit: str = "meters", 
         format: str = "json"
-    ) -> dict | bytes:
+    ) -> AreaElevationResult | bytes:
         """
         Get elevation data within a defined area.
         
@@ -125,7 +182,15 @@ class TessaDEMAPI:
         
         if format == "geotiff":
             return response.content
-        return response.json()
+        
+        data = response.json()
+        return AreaElevationResult(
+            results=data['results'],
+            rows=data['rows'],
+            columns=data['columns'],
+            resolution=data['resolution'],
+            status=data['status']
+        )
     
     def get_single_elevation(
         self, 
@@ -148,7 +213,7 @@ class TessaDEMAPI:
             raise ValueError(f"Latitude {latitude} out of range [{self.MIN_LATITUDE}, {self.MAX_LATITUDE}]")
         
         result = self.get_elevation_points([(latitude, longitude)], unit)
-        return result['results'][0]['elevation']
+        return result.results[0].elevation
     
     def get_grid_elevations(
         self, 
@@ -207,7 +272,7 @@ class TessaDEMAPI:
             row = []
             for j in range(grid_size):
                 idx = i * grid_size + j
-                row.append(result['results'][idx]['elevation'])
+                row.append(result.results[idx].elevation)
             elevations.append(row)
         
         return elevations

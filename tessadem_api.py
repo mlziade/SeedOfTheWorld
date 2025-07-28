@@ -1,5 +1,9 @@
 import requests
 from dataclasses import dataclass
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @dataclass
@@ -41,8 +45,10 @@ class TessaDEMAPI:
     MAX_AREA_DATA_POINTS = 16384
     MAX_GRID_SIZE = 128
 
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or os.getenv("API_KEY_TESSADEM")
+        if not self.api_key:
+            raise ValueError("API key is required. Set API_KEY_TESSADEM in .env file or pass api_key parameter.")
         self.base_url = "https://tessadem.com/api/elevation"
     
     def get_elevation_points(
